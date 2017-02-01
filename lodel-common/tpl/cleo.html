@@ -1,0 +1,806 @@
+<?php
+
+$context['defaultlang'] = 'en';
+if (!isset($context['lang'])) {
+	$context['lang'] = isset($context['sitelang']) ? $context['sitelang'] : $context['defaultlang'] ;
+}
+$convert = array(
+    'en' => 'en_US',
+    'fr' => 'fr_FR',
+    'es' => 'es_ES',
+    'pt' => 'pt_PT',
+    'de' => 'de_DE',
+);
+$language = in_array( $context['lang'], array('fr', 'en', 'es', 'pt', 'de') )
+          ? $convert[$context['lang']]
+          : $convert[$context['defaultlang']];
+/* Récupération du répertoire des locales dans le lodelconfig.php */
+$locales_path = class_exists('C') ? C::get('locales_path', 'cfg') : $GLOBALS['locales_path'];
+$domain = 'openbarre';
+putenv("LANG=$language");
+putenv("LANGUAGE=$language");
+setlocale(LC_ALL, $language.'.UTF-8');
+bindtextdomain($domain, $locales_path);
+bind_textdomain_codeset($domain, "UTF-8");
+textdomain($domain);
+if (!function_exists('__')) {
+	function __($string) {
+		return htmlentities(_($string), 0, "UTF-8");
+	}
+}
+/* SET #PF */
+if (isset($context['pf']) && ($context['pf'] == 'Hypotheses.org' || $context['pf'] == 'HO' )){
+	$context['pf'] = 'HO'; 
+} elseif (preg_match('/books(\.openedition|-devel\.revues)\.org$/', $_SERVER['SERVER_NAME'])) { 
+	$context['pf'] = 'OB'; 
+} elseif (preg_match('/calenda\.org$/', $_SERVER['SERVER_NAME'])) {  
+	$context['pf'] = 'CO'; 
+} elseif ( preg_match('/\.revues\.org$/', $_SERVER['SERVER_NAME'])
+         //  && !preg_match('/devel\.revues\.org$/', $_SERVER['SERVER_NAME'])
+           && !preg_match('/lodel\.revues\.org$/', $_SERVER['SERVER_NAME'])
+         ){
+	$context['pf'] = 'RO'; 
+} else {
+	$context['pf'] = 'NONE';
+}
+/* set #COOKIEDOMAIN */
+$arraydomain = explode('.',$_SERVER['SERVER_NAME']);
+$arraymaindomain= array_slice($arraydomain, -2);
+$context['cookiedomain']='.'.implode('.',$arraymaindomain);
+?>
+<CONTENT VERSION="1.0" LANG="[#SITELANG]" CHARSET="utf-8"/>
+<USE MACROFILE="macros_cairn.html"/>
+<LET VAR="wwwopeneditionorg"><?php   echo (string) (C::get('wwwopeneditionorg', 'cfg')); ?></LET>
+<LET VAR="booksopeneditionorg"><?php echo (string) (C::get('booksopeneditionorg', 'cfg')); ?></LET>
+<LET VAR="staticurl"><?php           echo (string) (C::get('staticurl', 'cfg')); ?></LET>
+<LET VAR="use_piwik"><?php           echo (C::get('use_piwik', 'cfg') == 'true')?'true':'' ; ?></LET> 
+<LET VAR="authenticate_url"><?php    echo (string) ('https://'.C::get('authenticate_server', 'cfg').'/authenticate'); ?></LET>
+<!--[ set #SOLRPLATFORM  ]-->
+<IF COND="[#PF] EQ 'OB'">
+	<LET VAR="solrplatform">OB</LET>
+<ELSEIF COND="[#PF] EQ 'RO'"/>
+	<LET VAR="solrplatform">RO</LET>
+</IF>
+<!--[ set #COOKIEDOMAIN FOR HO : openbarre is generetated on the openedition.org domain ]-->
+<IF COND="[#PF] EQ 'HO'">
+	<LET VAR="cookiedomain">.hypotheses.org</LET>
+</IF>
+<!--[ insert Google analytics for revues.org  ]-->
+<IF COND="[#PF] EQ 'RO'">
+<script type="text/javascript">
+if (document.cookie.indexOf("__cookiealert=1") !== -1) {
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-12411712-1']);
+    _gaq.push(['_setDomainName', '.revues.org']);
+    _gaq.push(['_setAllowLinker', true]);
+    _gaq.push(['_trackPageview']);
+    (function() {
+        var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+        ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+        var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+}
+</script>
+</IF>
+
+<IF COND="[#USE_PIWIK]">
+
+  <!-- Piwik Général -->
+  <script type="text/javascript">
+    var _paq = _paq || [];
+    // tracker methods like "setCustomDimension" should be called before "trackPageView"
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="https://pk.labocleo.org/";
+      _paq.push(['setTrackerUrl', u+'pk.php']);
+      _paq.push(['setSiteId', '8']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'pk.js'; s.parentNode.insertBefore(g,s);
+    })();
+  </script>
+  <!-- End Piwik Code -->
+
+
+  <IF COND="[#PF] EQ 'RO'">
+  <!-- Piwik -->
+  <script type="text/javascript">
+    var _paq = _paq || [];
+    // tracker methods like "setCustomDimension" should be called before "trackPageView"
+    _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="https://pk.labocleo.org/";
+      _paq.push(['setTrackerUrl', u+'pk.php']);
+      _paq.push(['setSiteId', '3']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'pk.js'; s.parentNode.insertBefore(g,s);
+    })();
+  </script>
+  <!-- End Piwik Code -->
+
+  </IF>
+
+  <IF COND="[#PF] EQ 'HO'">
+  <!-- Piwik -->
+  <script type="text/javascript">
+    var _paq = _paq || [];
+    // tracker methods like "setCustomDimension" should be called before "trackPageView"
+    _paq.push(["setDocumentTitle", document.domain + "/" + document.title]);
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="https://pk.labocleo.org/";
+      _paq.push(['setTrackerUrl', u+'pk.php']);
+      _paq.push(['setSiteId', '4']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'pk.js'; s.parentNode.insertBefore(g,s);
+    })();
+  </script>
+  <!-- End Piwik Code -->
+  </IF>
+
+  <IF COND="[#PF] EQ 'OB'">
+  <!-- Piwik -->
+  <script type="text/javascript">
+    var _paq = _paq || [];
+    // tracker methods like "setCustomDimension" should be called before "trackPageView"
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="https://pk.labocleo.org/";
+      _paq.push(['setTrackerUrl', u+'pk.php']);
+      _paq.push(['setSiteId', '5']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'pk.js'; s.parentNode.insertBefore(g,s);
+    })();
+  </script>
+  <!-- End Piwik Code -->
+  </IF>
+
+  <IF COND="[#PF] EQ 'CO'">
+  <!-- Piwik -->
+  <script type="text/javascript">
+    var _paq = _paq || [];
+    // tracker methods like "setCustomDimension" should be called before "trackPageView"
+    _paq.push(['trackPageView']);
+    _paq.push(['enableLinkTracking']);
+    (function() {
+      var u="https://pk.labocleo.org/";
+      _paq.push(['setTrackerUrl', u+'pk.php']);
+      _paq.push(['setSiteId', '6']);
+      var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+      g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'pk.js'; s.parentNode.insertBefore(g,s);
+    })();
+  </script>
+  <!-- End Piwik Code -->
+  </IF>
+</IF>
+
+<!--[ insert javascripts ]-->
+<!--[<script type="text/javascript" src="[#STATICURL]/js/jquery-latest.min.js"></script>]-->
+<script type="text/javascript" src="[#STATICURL]/openbarre/js/cleo.js?date=2014-12-01"></script>
+<script type="text/javascript" src="[#STATICURL]/js/jquery.jsonp-latest.min.js"></script>
+<script type="text/javascript"><!--
+    jQuery(document).ready(function($) {
+<IF COND="[#PF] NE 'HO'"> <!--[ pas d affichage de logo univ sur Hypo ]-->
+        if ( $.fn.fancybox == undefined ) {
+            $.getScript("[#STATICURL]/js/fancybox/jquery.fancybox-1.3.1.js", function() {
+                $('a.iframe').fancybox();
+            });
+        } else {
+            $('a.iframe').fancybox();
+        }
+        authurl=
+        $.jsonp({
+            url: ('[#AUTHENTICATE_URL]'),
+            callbackParameter: 'callback',
+            success: function(data) {
+                $('#authdata').html('<img src="'+data.favicon+'"> <a href="'+data.url+'">'+data.name+'</a>');
+		<!--[ Appel à mkDlList seulement pour revues.org ]-->
+		<IF COND="[#PF] EQ 'RO' AND ([#CLASS] EQ 'textes' OR [#TYPE] EQ 'numero' OR [#TYPE] EQ 'rubriqueannuelle')">
+                $.ajax({
+                  type: "GET",
+                  url: "[#ID]?format=pdfepub&norecordurl=1",
+                  success: function(msg){
+                      $('#dlLinks').append(msg);
+                  }
+                });
+		</IF>
+            },
+            error: function(data){
+		<!--[ menu PDF/EPUB pour RO ]-->
+		<IF COND="[#PF] EQ 'RO' AND ([#CLASS] EQ 'textes' OR [#TYPE] EQ 'numero' OR [#TYPE] EQ 'rubriqueannuelle')">
+                //$('#authdata').html('guest, <a href="https://auth.openedition.org">sign in</a>');
+                $.ajax({
+                    type: "GET",
+                    url: "[#ID]?format=pdfepub&norecordurl=1",
+                    success: function(msg){
+                        $('#dlLinks').append(msg);
+                    }
+                });
+		</IF>
+            }
+        });
+        $('#plateformes li').live('touchend', function(e) {});
+</IF>
+        $('input[name=q]').focus(function() {
+            if ( $(this).attr('value') == '<?php echo __('CHERCHER'); ?>' ) {
+                $(this).attr('value', '');
+            }
+        });
+    });
+<!--[ insert Avertissement Cookies for RO and OB ]-->
+<IF COND="[#PF] EQ 'RO' OR [#PF] EQ 'OB'">
+    jQuery(document).ready(function($) {
+	$(function() {
+		if (document.cookie.indexOf("__cookiealert=1") == -1) {
+			$("<span>").html("<span class=\"cookietext\"><?php echo __('COOKIES_ALERT'); ?> <a href=\"http://www.openedition.org/6540\"><?php echo __('COOKIES_MORE'); ?></a></span><span class=\"closecookiealert\"></span>").attr("id", "cookiealert").appendTo("body");
+			$("a,.closecookiealert").click(function() {
+				var expDate = new Date();
+				expDate.setTime(expDate.getTime() + (365 * 24 * 3600 * 1000));
+				document.cookie = "__cookiealert=1;expires=" + expDate.toGMTString() + ";domain=[#COOKIEDOMAIN];path=/";
+				$("#cookiealert").remove();
+			});
+		}
+	});
+    });
+</IF>
+--></script>
+<div id="openbarre">
+  <div class="openedition">
+    <div>
+      <div class="first">
+        <a href="http://www.openedition.org"><?php echo __('OPENEDITION'); ?></a>
+        <ul class="submenu nav-toggle-show">
+          <li>
+            <span><?php echo __('OPENEDITIONBOOKS_ORG'); ?></span>
+            <ul>
+              <li><a href="http://books.openedition.org"><span class="title"><?php echo __('OPENEDITIONBOOKS_ORG'); ?></span><?php echo __('OPENEDITIONBOOKS'); ?></a></li>
+              <li><a href="http://books.openedition.org/catalogue"><?php echo __('BOOKS'); ?></a></li>
+              <li><a href="http://books.openedition.org/publishers"><?php echo __('PUBLISHERS'); ?></a></li>
+              <li><a href="http://books.openedition.org"><?php echo __('PLUS'); ?></a></li>
+            </ul>
+          </li><li>
+            <span><?php echo __('REVUES_ORG'); ?></span>
+            <ul>
+                <li><a href="http://www.revues.org"><span class="title"><?php echo __('REVUES_ORG'); ?></span><?php echo __('REVUESORG'); ?></a></li>
+                <li><a href="http://www.openedition.org/catalogue-journals"><?php echo __('REVUES'); ?></a></li>
+                <li><a href="http://www.revues.org/6438"><?php echo __('PLUS'); ?></a></li>
+            </ul>
+          </li><li>
+            <span><?php echo __('CALENDA_ORG'); ?></span>
+            <ul>
+                <li><a href="http://calenda.org"><span class="title"><?php echo __('CALENDA_ORG'); ?></span><?php echo __('CALENDA'); ?></a></li>
+                <li><a href="http://calenda.org/search"><?php echo __('EVENEMENTS'); ?></a></li>
+                <li><a href="http://calenda.org/about"><?php echo __('PLUS'); ?></a></li>
+            </ul>
+          </li><li>
+                <span><?php echo __('HYPOTHESES_ORG'); ?></span>
+                <ul>
+                    <li><a href="http://hypotheses.org"><span class="title"><?php echo __('HYPOTHESES_ORG'); ?></span><?php echo __('HYPOTHESES'); ?></a></li>
+                    <li><a href="http://www.openedition.org/catalogue-notebooks"><?php echo __('CARNETS'); ?></a></li>
+                </ul>
+          </li>
+        </ul>
+      </div>
+      <div class="last nav-toggle-show">
+        <ul class="submenu">
+          <li>
+            <span><?php echo __('LETTREALERTES'); ?></span>
+            <ul>
+                <li><a href="http://newsletter.openedition.org"><span class="title"><?php echo __('LETTRE'); ?></span><?php echo __('LETTREDESC'); ?></a></li>
+                <li><a href="http://search.openedition.org/indexalert.php?a=description"><span class="title"><?php echo __('ALERTES'); ?></span><?php echo __('ALERTESDESC'); ?></a></li>
+            </ul>
+          </li><li>
+            <a href="http://www.openedition.org/14043"><?php echo __('FREEMIUM'); ?></a>
+          </li>
+        </ul>
+        <div class="align-right">
+          <form action="<IF COND="[#PF] EQ 'OB'">//books.openedition.org/catalogue#results<ELSE/>//search.openedition.org/</IF>" method="get">
+            <fieldset>
+              <div>
+                <input name="q" type="text" />
+                <IF COND="[#PF] EQ 'CO'" />
+                    <div class="search-choice">
+                        <input type="radio" id="calendaradio" name="pf" value="Calenda" checked="checked" /> <label for="calendaradio"><?php echo __('INCALENDA'); ?></label><br/><br/>
+                        <input type="radio" id="openeditionradio" name="pf" value="" /> <label for="openeditionradio"><?php echo __('INOPENEDITION'); ?></label>
+                    </div>
+                <ELSEIF COND="[#PF] EQ 'HO' AND [#UL]" />
+                	 <LET VAR="myquery">platformID:HO AND pub_name:"[#UL]"</LET>
+                	 <LOOP NAME="SOLR" QUERY="[#MYQUERY]"
+                              ROWS="1"
+                              CORE="publishers"
+                              FIELDS="id">
+			       <div class="search-choice">
+				  <input id="thejournalradio" name="ul" value="[#UL]" checked="checked" type="radio" />
+				  <label for="thejournalradio"><?php echo __('The Blog'); ?></label>
+				  <br /><br />
+				  <input id="openeditionradio" name="ul" value="" type="radio" />
+				  <label for="openeditionradio"><?php echo __('INOPENEDITION'); ?></label>
+				</div>
+                   	 </LOOP>
+                <ELSEIF COND="[#PF] EQ 'OB'">
+                    <!--[<div class="search-choice">
+                        <input type="radio" id="booksradio" name="ul" value="" checked="checked" onclick="javascript:document.getElementById('openbar-searchform').action='http://books.openedition.org/catalogue';" /> <label for="booksradio"><?php echo __('OPENEDITION_BOOKS'); ?></label><br/>
+                        <input type="radio" id="openeditionradio" name="ul" value="" onclick="javascript:document.getElementById('openbar-searchform').action='http://search.openedition.org/';" /> <label for="openeditionradio"><?php echo __('INOPENEDITION'); ?></label>
+                    </div>]-->
+                <ELSEIF COND="[#PF] EQ 'RO' AND [#SITE] NE 'wwwrevuesorg'"/>
+                    <div class="search-choice">
+                        <input type="radio" id="thejournalradio" name="ul" value="[#OPTIONS.METADONNEESSITE.URLDUSITE]" checked="checked" /> <label for="thejournalradio"><?php echo __('The Journal'); ?></label><br/><br/>
+                        <input type="radio" id="openeditionradio" name="ul" value="" /> <label for="openeditionradio"><?php echo __('INOPENEDITION'); ?></label>
+                    </div>
+                </IF>
+                <button type="submit" class="icons icon-search"><span><?php echo __('CHERCHER'); ?></span></button>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <IF COND="[#PF] NE 'HO'" />
+  <div class="context nav-toggle-show">
+    <div class="title-share">
+        <ul class="submenu">
+            <IF COND="[#PF] EQ 'CO'" />
+                <li>
+                    <span class="icons icon-info"><span><?php echo __('INFO'); ?></span></span>
+                </li>
+                <li class="last">
+                    <span><?php echo __('CALENDADESC'); ?></span>
+                </li>
+            <ELSEIF COND="[#PF] EQ 'HO'" />
+                <li>
+                    <span class="icons icon-info"><span><?php echo __('INFO'); ?></span></span>
+                </li>
+                <li class="last">
+                    <span><?php echo __('HYPOTHESESDESC'); ?></span>
+                </li>
+            <ELSEIF COND="[#SITE] EQ 'wwwopeneditionorg'" />
+                <li>
+                    <span class="icons icon-info"><span><?php echo __('INFO'); ?></span></span>
+                </li>
+                <li class="last">
+                    <span><?php echo __('OPENEDITIONDESC'); ?></span>
+                </li>
+            <ELSEIF COND="[#SITE] EQ 'wwwrevuesorg'" />
+                <li>
+                    <span class="icons icon-info"><span><?php echo __('INFO'); ?></span></span>
+                </li>
+                <li class="last">
+                    <span><?php echo __('WWWREVUESORGDESC'); ?></span>
+                </li>
+            <ELSEIF COND="[#PF] EQ 'OB' AND [#SITE] NE 'books'" />
+                <li class="bg-nav">
+                    <span class="icons icon-info"><span><?php echo __('INFO'); ?></span></span>
+                    <ul>
+                        <LET VAR="myquery">platformID:"[#SOLRPLATFORM]" AND pubentryFacet_publication:"[#SITE]"</LET>
+                        <LOOP NAME="SOLR" QUERY="[#MYQUERY]"
+                              ROWS="1"
+                              CORE="publishers"
+                              FIELDS="pub_titre, pub_soustitre, pub_accrocheediteur">
+                            <li>
+                                <dl>
+                                    <IF COND="[#PUB_TITRE]">
+                                        <dt><?php echo __('TITRE'); ?></dt>
+                                        <dd>[#PUB_TITRE]</dd>
+                                    </IF>
+                                    <IF COND="[#PUB_SOUSTITRE]">
+                                        <dd>[#PUB_SOUSTITRE]</dd>
+                                    </IF>
+                                    <IF COND="[#PUB_ACCROCHEEDITEUR]">
+                                        <dt><?php echo __('ACCROCHE_EDITEUR'); ?></dt>
+                                        <dd>
+                                            <?php if(preg_match_all('/<r2r:ml lang="([a-z]+)"/', $context['pub_accrocheediteur'], $context['matches'])) {?>
+                                                <IF COND="[#PUB_ACCROCHEEDITEUR:#SITELANG]">
+                                                    [#PUB_ACCROCHEEDITEUR:#SITELANG]
+                                                <ELSEIF COND="[#ACCROCHEEDITEUR:#DEFAULTLANG]"/>
+                                                    [#PUB_ACCROCHEEDITEUR:#DEFAULTLANG]
+                                                <ELSE/>
+                                                    [#PUB_ACCROCHEEDITEUR:#MATCHES.1.0]
+                                                </IF>
+                                            <?php } else {?>
+                                                [#PUB_ACCROCHEEDITEUR]
+                                            <?php } ?>
+                                        </dd>
+                                    </IF>
+                                </dl>
+                            </li>
+                        </LOOP>
+                    </ul>
+                </li>
+                <IF COND="([#CLASS] EQ 'textes' AND [#TYPE] NE 'informations' AND [#TYPE] NE 'actualite' AND [#TYPE] NE 'adressebibliographique' AND [#TYPE] NE 'revuedepresse') OR [#TYPE] EQ 'livre'">
+                <li class="last bg-nav">
+                    <span><?php echo __('DOIREFERENCES'); ?></span>
+                    <ul><li>
+                    <LET VAR="doi">[#ID|getDOI]</LET>
+                    <IF COND="[#DOI]">
+                        <dl>
+                            <dt><?php echo __('DOI'); ?></dt>
+                            <dd>[#DOI]</dd>
+                        </dl>
+                    </IF>
+                    </li>
+                    <li><a href="#cite" id="link-cite-openbar"><?php echo __('CITER'); ?></a></li>
+                    </ul>
+                </li>
+                </IF>
+                <!--[<li class="last bg-nav" id="dlLinks"></li>]-->
+                <LET VAR="iddocument"><?php echo $GLOBALS['context']['id'];?></LET>
+                <?php $GLOBALS['context']['mycount'] = 0;?>
+                <LOOP NAME="count_authors_oeb" SELECT="idperson,nomfamille,prenom,sortkey" TABLE="auteurs" WHERE="iddocument = '[#IDDOCUMENT]' AND (type = 'auteur' OR type='directeurdelapublication')">
+                    <LET VAR="myquery">personFacet_sortkey:"[#SORTKEY]" AND -resource:"[#SITEINFOS.URL]/[#ID]" AND (person_rolecode:"auteur" OR person_rolecode:"directeurdelapublication")</LET>
+                    <?php $GLOBALS['context']['mynbresults'] = $context['nbresults']; $GLOBALS['context']['resources'] = array();
+                    if($GLOBALS['context']['mycount'] == 0) {
+                        $GLOBALS['context']['mycount'] = 1;
+                    }
+                    ?>
+                    <LOOP NAME="SOLR" QUERY="[#MYQUERY]" ROWS="100" FIELDS="resource" CORE="persons">
+                        <DO><?php $GLOBALS['context']['resources'][] = $context['resource'];?></DO>
+                        <AFTER>
+                            <?php $context['myquery'] = 'platformID:"OB" AND (id:"'. join($GLOBALS['context']['resources'], '" OR id:"').'") AND (type:"livre" OR entity_class:"textes")';?>
+                            <LOOP NAME="SOLR" QUERY="[#MYQUERY]" ROWS="4" FIELDS="site_titre,titre,type,entity_anneeedition,entity_idparent,siteid,ancestry" CORE="documents">
+                                <BEFORE>
+                                    <?php if($GLOBALS['context']['mycount'] == 1) {
+                                        $GLOBALS['context']['mycount'] = -1;
+                                        $GLOBALS['context']['toclose'] = 1;
+                                    ?>
+                                    <li id="fromsameauthor" class="bg-nav last from-same-author"><span><?php echo __('MEMEAUTEUR'); ?></span><ul><li> <span><?php echo __('MEMEAUTEUR'); ?></span><ul>
+                                    <?php } ?>
+                                    <li><span class="name">[#PRENOM] [#NOMFAMILLE]</span><ul>
+                               </BEFORE>
+                                <DO>
+                                    <IF COND="[#COUNT] LE 3">
+                                        <li class="title">
+                                            <a href="[#ID]">
+                                                [#TITRE]
+                                                <span class="in">
+                                                    <IF COND="[#TYPE] EQ 'livre'">
+                                                        [#SITE_TITRE], [#ENTITY_ANNEEEDITION]
+                                                    <ELSE/>
+                                                        <LET VAR="mymyquery">platformID:"OB" AND type:"livre" AND (entity_identity:"[#ANCESTRY|join('" OR entity_identity:"')]") AND siteid:"[#SITEID]"</LET>
+                                                        <LOOP NAME="SOLR" QUERY="[#MYMYQUERY]" ROWS="1" FIELDS="titre,entity_anneeedition" CORE="documents">
+                                                            <em>in [#TITRE]</em>, [#SITE_TITRE], [#ENTITY_ANNEEEDITION]
+                                                        </LOOP>
+                                                    </IF>
+                                                </span>
+                                            </a>
+                                        </li>
+                                    <ELSEIF COND="[#COUNT] EQ [#NBRESULTS]">
+                                        <li class="more">
+                                            <a href="[#BOOKSOPENEDITIONORG]/author?name=[#SORTKEY|trim|urlencode]"><?php echo __('TOUSLESTEXTES'); ?></a>
+                                        </li>
+                                    </IF>
+                                </DO>
+                                <AFTER></ul></li></AFTER>
+                            </LOOP>
+                        </AFTER>
+                    </LOOP>
+                    <AFTER>
+                        <?php if(!empty($GLOBALS['context']['toclose'])) {?>
+                            </ul></li></ul></li>
+                        <?php } ?>
+                    </AFTER>
+                </LOOP>
+            <ELSEIF COND="[#PF] EQ 'OB'">
+                <li>
+                    <span class="icons icon-info"><span><?php echo __('INFO'); ?></span></span>
+                </li>
+                <li class="last">
+                    <span><?php echo __('OPENEDITIONBOOKS_DESC'); ?></span>
+                </li>
+            <ELSE/><!--[revues]-->
+                <li class="bg-nav">
+                    <span class="icons icon-info"><span><?php echo __('INFO'); ?></span></span>
+                    <ul>
+                        <LET VAR="myquery">platformID:"[#SOLRPLATFORM]" AND pubentryFacet_publication:"[#SITE]"</LET>
+                        <LOOP NAME="SOLR" QUERY="[#MYQUERY]" ROWS="1"
+                              CORE="publishers"
+                              FIELDS="pub_titre, pub_soustitre, pub_accroche,
+                                      pubentry_openedition, pubentry_editeurs,
+                                      pub_typesupport, pub_eissn,pub_issnpapier,
+                                      pubentry_politiqueacces, pub_id">
+
+                            <li>
+                                <dl>
+                                    <IF COND="[#PUB_TITRE]">
+                                        <dt><?php echo __('TITRE'); ?></dt>
+                                        <dd>[#PUB_TITRE]</dd>
+                                    </IF>
+                                    <IF COND="[#PUB_SOUSTITRE]">
+                                        <dd>[#PUB_SOUSTITRE]</dd>
+                                    </IF>
+                                    <IF COND="[#PUB_ACCROCHE]">
+                                        <dt><?php echo __('ACCROCHE_EDITEUR'); ?></dt>
+                                        <dd>
+                                            <?php if(preg_match_all('/<r2r:ml lang="([a-z]+)"/', $context['pub_accroche'], $context['matches'])) {?>
+                                                <IF COND="[#PUB_ACCROCHE:#SITELANG]">
+                                                    [#PUB_ACCROCHE:#SITELANG]
+                                                <ELSEIF COND="[#ACCROCHEEDITEUR:#DEFAULTLANG]"/>
+                                                    [#PUB_ACCROCHE:#DEFAULTLANG]
+                                                <ELSE/>
+                                                    [#PUB_ACCROCHE:#MATCHES.1.0]
+                                                </IF>
+                                            <?php } else {?>
+                                                [#PUB_ACCROCHE]
+                                            <?php } ?>
+                                        </dd>
+                                    </IF>
+                                   <!--[ FIXME Erreur sur Lodel 0.9. l'index partagé n'est pas disponible
+                                    <LET VAR="pubentry_openedition_str">[#PUBENTRY_OPENEDITION|implode("','"]</LET>
+                                   <?php $GLOBALS['db']->SelectDB(DATABASE.'_index');?>
+                                     <LOOP NAME="indexOE" SELECT="mlnom" TABLE="indexes" WHERE="nom IN ('[#PUBENTRY_OPENEDITION_STR]')" ORDER="rank">
+                                        <BEFORE><dd><?php echo __('SUJETS'); ?></BEFORE>
+                                        <DO>
+                                            <IF COND="[#MLNOM:#SITELANG]">
+                                                [#MLNOM:#SITELANG]
+                                            <ELSEIF COND="[#MLNOM:#DEFAULTLANG]"/>
+                                                [#MLNOM:#DEFAULTLANG]
+                                            </IF>
+                                        <IF COND="[#COUNT] LT [#NBRESULTS]">, </IF></DO>
+                                        <AFTER></dd></AFTER>
+                                    </LOOP>
+                                    <?php usecurrentdb(); ?>
+                                    ]-->
+                                </dl>
+                              </li>
+                              <li>
+                                <dl>
+                                   <IF COND="[#PUBENTRY_EDITEURS]">
+                                        <dt><?php echo __('EDITEUR'); ?></dt>
+                                        <dd>[#PUBENTRY_EDITEURS|implode(', ')]</dd>
+                                    </IF>
+                                   <IF COND="[#PUB_TYPESUPPORT]">
+                                        <dt><?php echo __('TYPESUPPORT'); ?></dt>
+                                        <dd>[#PUB_TYPESUPPORT]</dd>
+                                    </IF>
+                                   <IF COND="[#PUB_EISSN]">
+                                        <dt><?php echo __('EISSN'); ?></dt>
+                                        <dd>[#PUB_EISSN]</dd>
+                                    </IF>
+                                   <IF COND="[#PUB_ISSNPAPIER]">
+                                        <dt><?php echo __('ISSNPAPIER'); ?></dt>
+                                        <dd>[#PUB_ISSNPAPIER]</dd>
+                                    </IF>
+                                </dl>
+                                </li>
+                                <IF COND="[#PUBENTRY_POLITIQUEACCES]">
+                                <li>
+                                    <dl>
+                                        <dt><?php echo __('POLITIQUEACCESS'); ?></dt>
+                                        <dd>[#PUBENTRY_POLITIQUEACCES|implode(', ')]</dd>
+                                    </dl>
+                                  </li>
+                                </IF>
+                              <li><a href="[#WWWOPENEDITIONORG]/[#PUB_ID]"><?php echo __('NOTICE_PORTAIL'); ?></a></li>
+
+                        </LOOP>
+                    </ul>
+                </li>
+                <IF COND="[#CLASS] EQ 'textes' OR [#TYPE] EQ 'numero' OR [#TYPE] EQ 'livre'  OR [#TYPE] EQ 'rubriqueannuelle'">
+                    <IF COND="([#TYPE] == 'numero' OR  [#TYPE] == 'article') OR [#ISBN] OR [#ISBN_ELECTRONIQUE] OR [#CLASS] EQ 'textes'">
+                        <li class="bg-nav last">
+                            <span><?php echo __('DOIREFERENCES'); ?></span>
+                            <ul>
+                                <LET VAR="doi">[#ID|getDOI]</LET>
+                                <IF COND="[#DOI] OR [#ISBN] OR [#ISBN_ELECTRONIQUE]">
+                                  <li>
+                                    <dl>
+                                      <IF COND="[#TYPE] == 'numero' OR  [#TYPE] == 'article'">
+                                        <IF COND="[#DOI]">
+                                          <dt><?php echo __('DOI'); ?></dt>
+                                          <dd>[#DOI]</dd>
+                                        </IF>
+                                      </IF>
+                                      <!--[<IF COND="[#OPTIONS.METADONNEESSITE.ISSN]">
+                                        <dt><?php echo __('ISSN'); ?></dt>
+                                        <dd>[#OPTIONS.METADONNEESSITE.ISSN]</dd>
+                                      </IF>
+                                      <IF COND="[#OPTIONS.METADONNEESSITE.ISSN_ELECTRONIQUE]">
+                                        <dt><?php echo __('ISSNELECTRONIQUE'); ?></dt>
+                                        <dd>[#OPTIONS.METADONNEESSITE.ISSN_ELECTRONIQUE]</dd>
+                                      </IF>]-->
+                                      <IF COND="[#ISBN]">
+                                        <dt><?php echo __('ISBN'); ?></dt>
+                                        <dd>[#ISBN]</dd>
+                                      </IF>
+                                      <IF COND="[#ISBN_ELECTRONIQUE]">
+                                        <dt><?php echo __('ISBNELECTRONIQUE'); ?></dt>
+                                        <dd>[#ISBN_ELECTRONIQUE]</dd>
+                                      </IF>
+                                    </dl>
+                                  </li>
+                                </IF>
+                                <!--[<li><a href="#"><?php echo __('REFERENCEZOTERO'); ?></a></li>]-->
+                                <!--[<li><a href="#"><?php echo __('REFERENCEFORMATS'); ?></a></li>]-->
+                                <IF COND="[#CLASS] EQ 'textes'">
+                                    <li><a class="iframe" href="[#ID|makeurlwithid]?format=citation"><?php echo __('CITER'); ?></a></li>
+                                </IF>
+                            </ul>
+                        </li><!-- /DOI / Références -->
+                    </IF>
+                    <li class="bg-nav last" id="dlLinks"></li>
+                    <LET VAR="iddocument">[#ID]</LET>
+                    <LOOP NAME="hasAuthors" TABLE="auteurs" SELECT="COUNT(idperson) AS hasauthors" WHERE="iddocument = [#ID] AND type = 'auteur'">
+                    <IF COND="[#CLASS] EQ 'textes' AND [#HASAUTHORS]">
+                        <LET VAR="relations_article_courant">[#ID]</LET>
+                        <LET VAR="count_authors">
+                            <LOOP NAME="count_authors" SELECT="idperson,nomfamille,prenom,description" TABLE="auteurs" WHERE="iddocument = '[#IDDOCUMENT]' AND type = 'auteur'">
+                                <DO>
+                                    <LOOP NAME="count_byThisAuthor"
+                                        SELECT="id,datepubli,langue,LEFT(texte,1) AS texte,LEFT(alterfichier,1) AS alterfichier,documentcliquable,titre,soustitre"
+                                        TABLE="textes"
+                                        WHERE="idperson = '[#IDPERSON]'
+                                             AND type NOT IN ('informations', 'actualite')
+                                             AND id NOT IN ([#RELATIONS_ARTICLE_COURANT])"
+                                        ORDER="datepubli DESC"
+                                        LIMIT="3">
+                                        <DO>1</DO>
+                                    </LOOP>
+                                </DO>
+                            </LOOP>
+                        </LET>
+                        <LET VAR="count_authors_revuesorg">0</LET>
+
+                        <IF COND="[#COUNT_AUTHORS] GT 0 OR [#COUNT_AUTHORS_REVUESORG] GT 0">
+                            <li class="bg-nav last from-same-author">
+                                <span><?php echo __('MEMEAUTEUR'); ?></span>
+                                <ul>
+                                    <IF COND="[#COUNT_AUTHORS] GT 0">
+                                        <li>
+                                            <span><?php echo __('MEMEAUTEURREVUE'); ?></span>
+
+                                            <LOOP NAME="authors" SELECT="idperson,nomfamille,prenom,description" TABLE="auteurs" WHERE="iddocument = '[#IDDOCUMENT]' AND type = 'auteur'" ORDER="rank">
+                                                <DO>
+                                                    <LET VAR="limit">3</LET>
+                                                    <LOOP NAME="byThisAuthor"
+                                                          SELECT="id,datepubli,langue,LEFT(texte,1) AS texte,LEFT(alterfichier,1) AS alterfichier,documentcliquable,titre,soustitre"
+                                                          TABLE="textes"
+                                                          WHERE="idperson = '[#IDPERSON]'
+                                                                 AND type NOT IN ('informations', 'actualite')
+                                                                 AND id NOT IN ([#RELATIONS_ARTICLE_COURANT])"
+                                                          ORDER="datepubli DESC"
+                                                          LIMIT="[#LIMIT]">
+                                                        <BEFORE><ul><li><span class="name">[#PRENOM] [#NOMFAMILLE]</span><ul></BEFORE>
+                                                        <DO>
+                                                            <IF COND="[#COUNT] LE [#LIMIT]">
+                                                                <li class="title">
+                                                                    <a href="[#ID|makeurlwithid]">[#TITRE|removenotes]
+                                                                        <MACRO NAME="CAIRN_VARIABLES" />
+                                                                        <IF COND="[#CAIRN.STATUT]">
+                                                                            [<?php echo __('RESUME'); ?> | <?php echo __('ACCESRESTREINT'); ?>]
+                                                                        <ELSE/>
+                                                                            <IF COND="[#DATEPUBLI] LE today()">
+                                                                                <IF COND="[#TEXTE] OR [#ALTERFICHIER]">
+                                                                                    [<?php echo __('TEXTEINTEGRAL'); ?><IF COND="[#NATURE] EQ 'traduction'"> | <?php echo __('TRADUCTION'); ?></IF>]
+                                                                                <ELSE/>
+                                                                                    [<?php echo __('RESUME'); ?>]
+                                                                                </IF>
+                                                                            <ELSE/>
+                                                                                [<?php echo __('TEXTEDIFFERE'); ?> [#DATEPUBLI|formateddate('%B %Y')]]
+                                                                            </IF>
+                                                                        </IF>
+                                                                        <span class="in"><?php echo __('PARUDANS'); ?>
+                                                                            <em>[#OPTIONS.METADONNEESSITE.TITRESITE|trim]</em><LOOP NAME="publishedInSimple"
+                                                                                  SELECT="id,titre,numero,datepublipapier,datepubli,periode"
+                                                                                  TABLE="relations, publications"
+                                                                                  WHERE="id2 = '[#ID]'
+                                                                                         AND type IN ('numero', 'rubrique', 'livre')
+                                                                                         AND nature = 'P'
+                                                                                         AND id1 = publications.identity"
+                                                                                  ORDER="degree DESC"
+                                                                                  LIMIT="2"><BEFORE>, </BEFORE>
+                                                                                <!--[ numéro / rubrique ]-->
+                                                                                    <IF COND="[#TYPE] EQ 'livre'">in <em>[#TITRE]</em></IF>
+                                                                                    <IF COND="[#TYPE] EQ 'numero'">[#NUMERO]</IF>
+                                                                                    <IF COND="[#TYPE] EQ 'livre' OR [#TYPE] EQ 'numero'">
+                                                                                        <IF COND="![#PERIODE]">
+                                                                                            <IF COND="[#DATEPUBLIPAPIER|isadate]">
+                                                                                                <LET VAR="periode">[#DATEPUBLIPAPIER|formateddate("%Y")]</LET>
+                                                                                            <ELSEIF COND="[#DATEPUBLI|isadate]"/>
+                                                                                                <LET VAR="periode">[#DATEPUBLI|formateddate("%Y")]</LET>
+                                                                                            <ELSEIF COND="[#CREATIONDATE|isadate]"/>
+                                                                                                <LET VAR="periode">[#CREATIONDATE|formateddate("%Y")]</LET>
+                                                                                            </IF>
+                                                                                        </IF>
+                                                                                        <IF COND="[#PERIODE]">
+                                                                                            <IF COND="[#TYPE] EQ 'livre'">, </IF>
+                                                                                            <IF COND="[#TYPE] EQ 'numero'"> | </IF>
+                                                                                            [#PERIODE]
+                                                                                        </IF>
+                                                                                    <ELSE/>
+                                                                                        [#TITRE]
+                                                                                    </IF>
+                                                                            </LOOP>
+                                                                        </span>
+                                                                    </a>
+                                                                </li>
+                                                            </IF>
+                                                        </DO>
+                                                        <AFTER>
+                                                            <IF COND="[#NBRESULTS] GT [#LIMIT]">
+                                                                <li class="more"><a href="[#IDPERSON|makeurlwithid]"><?php echo __('TOUSLESTEXTES'); ?></a></li>
+                                                            </IF>
+                                                            </ul></li></ul>
+                                                        </AFTER>
+                                                    </LOOP>
+                                                </DO>
+                                            </LOOP>
+
+                                        </li>
+                                    </IF>
+                                    <IF COND="[#COUNT_AUTHORS_REVUESORG] GT 0">
+                                        <li><div><strong><?php echo __('MEMEAUTEURREVUESORG'); ?></strong></div>
+                                        <ul>
+
+                                        </ul>
+                                        </li>
+                                    </IF>
+                                </ul>
+                            </li><!-- /Du même auteur -->
+                        </IF>
+                        <!--[<li><?php echo __('MEMETHEME'); ?></li>]-->
+                        <!--[<li><?php echo __('ARTICLESLIES'); ?></li>]-->
+                    </IF>
+                    </LOOP>
+                    <IF COND="[#TYPE] EQ 'numero' AND [#URLPUBLICATIONEDITEUR]">
+                        <li class="last"><a href="[#URLPUBLICATIONEDITEUR]"><?php echo __('VOLUMEPAPIER'); ?></a></li>
+                    </IF>
+                    <!--[<IF COND="[#CLASS] EQ 'textes'">
+                        <li><?php echo __('OUTILS'); ?>
+                            <ul>
+                                <li><a href="[#ID|makeurlwithid('signaler')]"><?php echo __('SIGNALERARTICLE'); ?></a></li>
+                                <li><a href="#" onclick="window.print();"><?php echo __('IMPRIMERARTICLE'); ?></a></li>
+                                <li><a href="#"><?php echo __('REFERENCEZOTERO'); ?></a></li>
+                            </ul>
+                        </li>
+                    </IF>]-->
+                </IF><!--[ /COND="[#TYPE] EQ ..." ]-->
+
+            </IF>
+        </ul>
+
+		<LET VAR="title_share">
+			<IF COND="[#G_TITLE]">[#G_TITLE]
+			<ELSEIF COND="[#OPTIONS.METADONNEESSITE.TITRESITE]" />[#OPTIONS.METADONNEESSITE.TITRESITE]
+			</IF>
+		</LET>
+		<IF COND="[#TITLE_SHARE|strlen] GT 93">
+			<LET VAR="title_share">[#TITLE_SHARE|substr(0, 93)]...</LET>
+		</IF>
+		<LET VAR="title_share">[#TITLE_SHARE|urlencode]</LET>
+
+		<LET VAR="url_share"><?php urlencode("http" . (isset($_SERVER["HTTPS"]) ? "s" : "") . "://" . $_SERVER['HTTP_HOST'] . "/" . $_SERVER["REQUEST_URI"]); ?></LET>
+		<LET VAR="url_twitter"><IF COND="[#PF] EQ 'HO'">#<ELSE/>http://twitter.com/share?text=[#TITLE_SHARE]&amp;url=[#URL_SHARE]&amp;via=openeditionsays</IF></LET>
+		<LET VAR="url_fb"><IF COND="[#PF] EQ 'HO'">#<ELSE/>https://www.facebook.com/sharer.php?u=[#TITLE_SHARE]&amp;title=[#URL_SHARE]</IF></LET>
+		<LET VAR="url_google"><IF COND="[#PF] EQ 'HO'">#<ELSE/>https://plus.google.com/share?url=[#TITLE_SHARE]&amp;title=[#URL_SHARE]</IF></LET>
+        <ul class="share">
+            <li class="icons icon-twitter">
+							<a href="[#URL_TWITTER]" class="twitter button-wrap">
+								<span>Twitter</span>
+							</a>
+						</li>
+            <li class="icons icon-facebook">
+							<a href="[#URL_FB]" class="facebook button-wrap">
+								<span>Facebook</span>
+							</a>
+						</li>
+            <li class="icons icon-google-plus">
+							<a href="[#URL_GOOGLE]" class="google button-wrap">
+								<span>Google +</span>
+							</a>
+						</li>
+        </ul>
+    </div>
+    <div class="align-right">
+        <div id="authdata"></div>
+    </div>
+  </div>
+</IF>
+  <button class="icons icon-nav"></button>
+    <!--[if lte IE 9]>
+        <link rel="stylesheet" href="[#STATICURL]/openbarre/css/ie_openbarre.css">
+    <![endif]-->
+</div>
